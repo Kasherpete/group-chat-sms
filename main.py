@@ -114,10 +114,14 @@ def handler(msg):
                 name = ask(msg.number, "What is your name?", default=msg.number)
 
                 if add(str(msg.number), name):
+
                     msg.send_sms("You have been added!")
+                    send_group_sms(f"'{name}' has been added to the group!", except_=msg.number)
 
                 else:
+
                     msg.send_sms("Bruh you are already in this chat.")
+
         elif is_in_chat(msg.number):
             send_group_sms(msg.content, except_=msg.number)
 
