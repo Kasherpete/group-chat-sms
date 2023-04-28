@@ -58,7 +58,11 @@ def send_group_sms(content, from_,  except_=""):
             if number != except_:
 
                 if from_ != "sys":
-                    client.send_sms(number, f"{list1['ChatNumbers'][from_]}: {content}")
+                    try:
+                        client.send_sms(number, f"{list1['ChatNumbers'][from_]}: {content}")
+                    except KeyError:
+                        client.send_sms(number, f"sys: An unauthorized number registered in the group seems to have sent a message: '{from_}: {content}'")
+                        print(f"sys: An unauthorized number registered in the group seems to have sent a message: '{from_}: {content}'")
                 else:
                     client.send_sms(number, f"System: {content}")
 
@@ -113,35 +117,38 @@ def add(content, name):
         return True
 
 
+# see if file is created yet
 with open("SERVER.json", 'r') as f:
-
     try:
-
         list1 = json.loads(f.read())
 
     except json.decoder.JSONDecodeError:
 
-        # if there is corruption in file
+        # if there is corruption in file, reset json
         list1 = {"ChatNumbers": {}}
+        with open("SERVER.json", 'w') as f:
+            f.write(json.dumps(list1))
 
 
-send_group_sms("The server is online.", from_="sys")
-
+send_group_sms("The server is now online.", from_="sys")
+print('Notified users.')
 
 
 @client.on("message")
 def handler(msg):
     if msg.type == pytextnow.MESSAGE_TYPE:
+        # on command
         if msg.content[0] == "!":
 
             if msg.content == "!add":
 
+                # do user addition procedure
                 name = ask(msg.number, "What is your name?", default=msg.number)
 
                 if add(str(msg.number), name):
 
                     msg.send_sms("You have been added!")
-                    send_group_sms(f"'{name}' has been added to the group!", from_="sys", except_=msg.number)
+                    send_group_sms(f"'{name}' has been added to the group!", from_="SYSTEM", except_=msg.number)
 
                 else:
 
@@ -150,6 +157,4 @@ def handler(msg):
         elif is_in_chat(msg.number):
 
             send_group_sms(msg.content, from_=msg.number, except_=msg.number)
-
-
-
+            print(f"{msg.number}: {msg.content}")
